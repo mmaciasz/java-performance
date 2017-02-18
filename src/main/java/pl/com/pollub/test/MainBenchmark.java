@@ -10,8 +10,10 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import pl.com.pollub.test.constants.Names;
 import pl.com.pollub.test.dto.Person;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,24 +36,26 @@ public class MainBenchmark {
     }
 
     @Benchmark
-    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
+    @BenchmarkMode({Mode.AverageTime})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void toMapCollect() {
-        persons.stream().collect(Collectors.toMap(Person::getPersonId, person -> person));
+        final Map<Long, Person> personsMap = persons.stream().collect(Collectors.toMap(Person::getPersonId, person -> person));
+        final List<Person> ret = personsMap.entrySet().stream().filter(p -> p.getValue().getFirstName().equals(Names.Aaliyah.name()))
+                .collect(ArrayList<Person>::new, (list, p) -> list.add(p.getValue()), ArrayList::addAll);
     }
 
     @Benchmark
-    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
+    @BenchmarkMode({Mode.AverageTime})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void toMapParallelCollect() {
         persons.parallelStream().collect(Collectors.toMap(Person::getPersonId, person -> person));
     }
 
     @Benchmark
-    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
+    @BenchmarkMode({Mode.AverageTime})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void toMapUsingReduce() {
-        final Map<Long, Person> result = persons.stream().reduce(new HashMap<Long, Person>(), (map, person) -> {
+        persons.stream().reduce(new HashMap<>(), (map, person) -> {
             map.put(person.getPersonId(), person);
             return map;
         }, (map1, map2) -> {
@@ -61,10 +65,10 @@ public class MainBenchmark {
     }
 
     @Benchmark
-    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
+    @BenchmarkMode({Mode.AverageTime})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void toMapUsingParallelReduce() {
-        final Map<Long, Person> result = persons.parallelStream().reduce(new ConcurrentHashMap<Long, Person>(), (map, person) -> {
+        persons.parallelStream().reduce(new ConcurrentHashMap<Long, Person>(), (map, person) -> {
             map.put(person.getPersonId(), person);
             return map;
         }, (map1, map2) -> {

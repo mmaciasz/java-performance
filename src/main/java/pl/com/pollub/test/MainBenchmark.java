@@ -12,7 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.com.pollub.test.dto.Person;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -31,26 +34,54 @@ public class MainBenchmark {
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
+    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void getData() {
-        DataPrepare.prepareData(10000);
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void mapTest() {
+    public void toMapCollect() {
         persons.stream().collect(Collectors.toMap(Person::getPersonId, person -> person));
     }
 
+    @Benchmark
+    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public void toMapParallelCollect() {
+        persons.parallelStream().collect(Collectors.toMap(Person::getPersonId, person -> person));
+    }
+
+    @Benchmark
+    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public void toMapUsingReduce() {
+        final Map<Long, Person> result = persons.stream().reduce(new HashMap<Long, Person>(), (map, person) -> {
+            map.put(person.getPersonId(), person);
+            return map;
+        }, (map1, map2) -> {
+            map1.putAll(map2);
+            return map1;
+        });
+    }
+
+    @Benchmark
+    @BenchmarkMode({Mode.AverageTime, Mode.SampleTime, Mode.SingleShotTime})
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public void toMapUsingParallelReduce() {
+        final Map<Long, Person> result = persons.parallelStream().reduce(new ConcurrentHashMap<Long, Person>(), (map, person) -> {
+            map.put(person.getPersonId(), person);
+            return map;
+        }, (map1, map2) -> {
+            map1.putAll(map2);
+            return map1;
+        });
+    }
+
     public static void main(String[] args) throws RunnerException {
-        log.error("Beginning jmh tests...");
+        log.info("Beginning jmh tests...");
         Options opt = new OptionsBuilder()
                 .include(MainBenchmark.class.getSimpleName())
-                .warmupIterations(5)
-                .measurementIterations(5)
-                .forks(1)
+                .shouldDoGC(true)
+                .warmupIterations(10)
+                .measurementIterations(10)
+                .forks(2)
+                .syncIterations(true)
                 .build();
 
         new Runner(opt).run();

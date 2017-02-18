@@ -42,6 +42,14 @@ THE POSSIBILITY OF SUCH DAMAGE.
         <maven>3.0</maven>
     </prerequisites>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <jmh.version>RELEASE</jmh.version>
+        <javac.target>1.8</javac.target>
+        <log4j.version>RELEASE</log4j.version>
+        <uberjar.name>java-performance</uberjar.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
@@ -57,21 +65,14 @@ THE POSSIBILITY OF SUCH DAMAGE.
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.22</version>
+            <version>${log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.22</version>
+            <version>${log4j.version}</version>
         </dependency>
     </dependencies>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jmh.version>1.17.3</jmh.version>
-        <javac.target>1.8</javac.target>
-        <uberjar.name>benchmarks</uberjar.name>
-    </properties>
 
     <build>
         <plugins>
@@ -98,7 +99,8 @@ THE POSSIBILITY OF SUCH DAMAGE.
                         <configuration>
                             <finalName>${uberjar.name}</finalName>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>org.openjdk.jmh.Main</mainClass>
                                 </transformer>
                             </transformers>
